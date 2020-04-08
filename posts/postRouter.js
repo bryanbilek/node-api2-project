@@ -4,58 +4,43 @@ const router = express.Router();
 
 const Posts = require("../data/db.js");
 
-//POST /posts/ does post but response tells me error
-//PUT /posts/:id updates but gives me error message
-
 //POST = /api/posts/
-// router.post('/', (req, res) => {
-//     Posts.insert(req.body)
-//         .then(post => {
-//             if (post.title === undefined || post.contents === undefined) {
-//                 res.status(400).json({ errorMessage: "Please provide title and contents for the post." });
-//             } else {
-//                 res.status(201).json(post);
-//             }
-//         })
-//         .catch(error => {
-//             res.status(500).json({ error: "There was an error while saving the post to the database" });
-//         });
-// });
-
 router.post("/", (req, res) => {
-    Posts.insert(req.body)
-    .then(post => {
-        if (!post || !post.title || !post.contents) {
-            res.status(400).json({ errorMessage: "Please provide title and contents for the post." });
-        } else {
-            res.status(201).json(post);
-        }
-    })
-    .catch(err => {
-        res.status(500).json({ error: "There was an error while saving the post to the database" });
-    })
-})
+    const post = req.body;
+    if (!post.title || !post.contents) {
+        res.status(400).json({ errorMessage: "Please provide title and contents for the post." });
+    } else {
+        Posts.insert(post)
+            .then(post => {
+                res.status(201).json(post);
+
+            })
+            .catch(err => {
+                res.status(500).json({ error: "There was an error while saving the post to the database" });
+            })
+    }
+});
 
 //POST = /api/posts/:id/comments
 router.post("/:id/comments", (req, res) => {
     Posts.findCommentById(req.params.id)
-    .then(post => {
-        if (post) {
-            Posts.insertComment(req.body)
-            .then(comment => {
-                if (req.body.text) {
-                    res.status(201).json(comment);
-                } else {
-                    res.status(400).json({ errorMessage: "Please provide text for the comment." });
-                }
-            })
-            .catch(err => {
-                res.status(500).json({ error: "The comments information could not be retrieved." });
-            })
-        } else {
-            res.status(404).json({ message: "The post with the specified ID does not exist." });
-        }
-    })
+        .then(post => {
+            if (post) {
+                Posts.insertComment(req.body)
+                    .then(comment => {
+                        if (req.body.text) {
+                            res.status(201).json(comment);
+                        } else {
+                            res.status(400).json({ errorMessage: "Please provide text for the comment." });
+                        }
+                    })
+                    .catch(err => {
+                        res.status(500).json({ error: "The comments information could not be retrieved." });
+                    })
+            } else {
+                res.status(404).json({ message: "The post with the specified ID does not exist." });
+            }
+        })
 });
 
 //GET = /api/posts/
@@ -118,13 +103,17 @@ router.delete("/:id", (req, res) => {
         });
 });
 
+
 //PUT = /api/posts/:id
 router.put('/:id', (req, res) => {
+    const post = req.body;
+    if (!post.title || !post.contents) {
+        res.status(400).json({ errorMessage: "Please provide title and contents for the post." })
+    }
+
     Posts.update(req.params.id, req.body)
-        .then(post => {
-            if (!post.title || !post.contents) {
-                res.status(400).json({ errorMessage: "Please provide title and contents for the post." })
-            } else if (!post) {
+        .then(post => { 
+            if (!post) {
                 Posts.findById(req.params.id)
                     .then(post => {
                         res.status(404).json({ message: "The post with the specified ID does not exist." })
